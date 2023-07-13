@@ -1,0 +1,19 @@
+# This is a sample of bot config. All the data is fake.
+# Fill config with your data and put it near the bot executable.
+
+bot_key: 12312312312:ASDASdqasah0e89Haisdasdg8ASdg  # chat bot API token
+
+ngrok_cmds:  # list of ngrok configs avalible to start from with bot
+  - description: Start TCP connection on 8080
+    port: 8080
+    connection_type: tcp
+    permitted_users: [12344567]  # list of users who can use this config
+
+  - description: Start RDP connection
+    howto: Use RDP client to connect with host and port
+    port: 3389
+    connection_type: tcp
+    permitted_users: [12344567]
+
+permitted_chats:  # chats where bot are allowed to work
+  - 66666666
