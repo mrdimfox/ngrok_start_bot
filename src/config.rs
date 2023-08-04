@@ -17,6 +17,7 @@ pub struct Config {
     pub bot_key: String,
     pub ngrok_cmds: NgrokCmds,
     pub permitted_chats: Vec<i64>,
+    pub ngrok_domain: Option<String>,
 }
 
 pub fn load() -> Config {

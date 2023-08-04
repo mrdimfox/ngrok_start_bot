@@ -207,7 +207,7 @@ async fn buttons_handler(
     query: CallbackQuery,
     ngrok_cmd: NgrokCmd,
 ) -> HandlerResult {
-    let ngrok_connection_result = start_ngrok(&state.ngrok, &ngrok_cmd).await;
+    let ngrok_connection_result = start_ngrok(&state.ngrok, &ngrok_cmd, &state.config.ngrok_domain).await;
 
     if let Some(Message { id, chat, .. }) = query.message {
         let mut msg =
@@ -226,8 +226,8 @@ async fn reply_from_query(bot: &Bot, query: &CallbackQuery, text: String) {
     }
 }
 
-async fn start_ngrok(ngrok: &Ngrok, cmd: &NgrokCmd) -> String {
-    let ngrok_start_result = ngrok.start(&cmd.connection_type, cmd.port, true);
+async fn start_ngrok(ngrok: &Ngrok, cmd: &NgrokCmd, domain: &Option<String>) -> String {
+    let ngrok_start_result = ngrok.start(&cmd.connection_type, cmd.port, domain, true);
 
     log::info!("Chosen ngrok config: {:?}", cmd);
     sleep(Duration::from_millis(500)).await;
@@ -241,7 +241,7 @@ async fn start_ngrok(ngrok: &Ngrok, cmd: &NgrokCmd) -> String {
                 connection_report = result_str,
                 url = url.clone(),
                 host = url.host_str().unwrap(),
-                port = url.port().unwrap(),
+                port = url.port().unwrap_or(80),
                 howto = cmd
                     .howto
                     .clone()

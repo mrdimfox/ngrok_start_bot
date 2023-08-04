@@ -21,20 +21,26 @@ impl Ngrok {
         &self,
         connection_type: &str,
         port: u32,
+        domain: &Option<String>,
         kill_on_start: bool,
     ) -> Result<String, String> {
         if self.is_run() && kill_on_start {
             self.kill();
         }
 
-        let child = Command::new("ngrok")
-            .arg(connection_type)
-            .arg(port.to_string())
-            .kill_on_drop(true)
-            .stdout(Stdio::null())
-            .spawn();
+        self._bump_version();
 
-        if let Ok(mut child) = child {
+        let args = self._collect_args(connection_type, port, domain);
+
+        let mut ngrok_cli_cmd = Command::new("ngrok");
+        ngrok_cli_cmd
+            .args(&args)
+            .kill_on_drop(true)
+            .stdout(Stdio::null());
+
+        log::info!("Starting ngrok... {:#?}", ngrok_cli_cmd);
+
+        if let Ok(mut child) = ngrok_cli_cmd.spawn() {
             let (send, recv) = channel::<()>();
             *self.kill_channel.lock().unwrap() = Some(send);
 
@@ -116,11 +122,10 @@ impl Ngrok {
                     .get(0)
                     .ok_or_else(|| "Error: no tunnels were returned by Ngrok".into())
                     .and_then(|tun| {
-                        Url::parse(&tun.public_url)
-                            .map_or(
-                                Err("Bad URL returned from API".into()),
-                                Ok, //
-                            )
+                        Url::parse(&tun.public_url).map_or(
+                            Err("Bad URL returned from API".into()),
+                            Ok, //
+                        )
                     })
             }
             Err(err) => {
@@ -128,6 +133,30 @@ impl Ngrok {
                 Err("Can't parse ngrok API response".into())
             }
         }
+    }
+
+    fn _bump_version(&self) {
+        let _ = Command::new("ngrok").args(["-v"]).spawn();
+    }
+
+    fn _collect_args(
+        &self,
+        connection_type: &str,
+        port: u32,
+        domain: &Option<String>,
+    ) -> Vec<String> {
+        let mut args: Vec<String> = vec![connection_type.to_string()];
+
+        if let Some(domain) = domain {
+            if connection_type == "http" {
+                args.push("--domain".to_string());
+                args.push(domain.to_owned());
+            }
+        }
+
+        args.push(port.to_string());
+
+        args
     }
 }
 
